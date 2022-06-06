@@ -1,0 +1,1 @@
+INSERT INTO `user` VALUES (1,'scm4','a8af855d47d091f0376664fe588207f334cdad22', 1, 0);
