@@ -10,7 +10,9 @@ class Controller extends BaseObject {
 	const ACTION = 'action';
 	const ACTION_LOGIN = 'login';
 	const ACTION_LOGOUT = 'logout';
+	const ACTION_CREATE_CHANEL = 'createChannel';
 	const USER_NAME = 'userName';
+	const USER_ID = 'userId';
 	const USER_PASSWORD = 'password';
 
 	private static $instance = false;
@@ -46,6 +48,7 @@ class Controller extends BaseObject {
 			case self::ACTION_LOGIN:
 				if (!AuthenticationManager::authenticate($_REQUEST[self::USER_NAME], $_REQUEST[self::USER_PASSWORD])) {
 					$this->forwardRequest(['Invalid user name or password']);
+					Util::redirect("login");
 				}
 				Util::redirect();
 				break;
@@ -55,42 +58,16 @@ class Controller extends BaseObject {
 				Util::redirect();
 				break;
 
-			
+			// case self::ACTION_CREATE_CHANNEL:
+			// 	Channel::add((int)$_REQUEST['bookId']);
+			// 	Util::redirect();
+			// 	break;
 
 			default:
 				throw new \Exception('Unknown controller action: ' . $action);
 				break;
 		}
 
-	}
-
-	private function processCheckout(string $nameOnCard = null, string $cardNumber = null) : bool {
-
-		$errors = [];
-		
-
-		if (sizeof($errors)) {
-			$this->forwardRequest($errors);
-			return false;
-		}
-
-		// if (ShoppingCart::size() == 0) {
-		// 	$this->forwardRequest(['Shopping cart is empty.']);
-		// 	return false;
-		// }
-
-		$user = AuthenticationManager::getAuthenticatedUser();
-		//$orderId = DataManager::createOrder($user->getId(), ShoppingCart::getAll(), $nameOnCard, $cardNumber);
-
-		// if (!$orderId) {
-		// 	$this->forwardRequest(['Checkout failed.']);
-		// 	return false;
-		// }
-
-		// ShoppingCart::clearCart();
-		// Util::redirect('index.php?view=success&orderId=' . rawurlencode($orderId));
-
-		return true;
 	}
 
 	private function forwardRequest(array $errors, string $page = null) {
@@ -107,6 +84,5 @@ class Controller extends BaseObject {
 
 		header('Location:' . $page);
 	}
-
 
 }

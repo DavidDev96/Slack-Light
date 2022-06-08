@@ -2,10 +2,8 @@
 
 use Slack\Util;
 use Slack\AuthenticationManager;
-use Slack\ShoppingCart;
 
 $user = AuthenticationManager::getAuthenticatedUser();
-// $cartSize = ShoppingCart::size();
 if (isset($_GET["errors"])) {
 	$errors = unserialize(urldecode($_GET["errors"]));
 }
@@ -32,28 +30,13 @@ if (isset($_GET["errors"])) {
   <div class="container-fluid">
     <!-- Brand and toggle get grouped for better mobile display -->
     <div class="navbar-header">
-      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-navbar-collapse-1">
-        <span class="sr-only">Toggle navigation</span>
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-      </button>
       <a class="navbar-brand" href="/">Slack-light (V 1.0)</a>
     </div>
 
 
     <div class="navbar-collapse collapse" id="bs-navbar-collapse-1">
-      <ul class="nav navbar-nav">
-        <li  <?php if ($view === 'welcome') { ?>class="active"<?php } ?>><a href="index.php">Home</a></li>
-        <li <?php if ($view === 'list') { ?>class="active"<?php } ?>><a href="index.php?view=list">List</a></li>
-        <li  <?php if ($view === 'search') { ?>class="active"<?php } ?>><a href="index.php?view=search">Search</a></li>
-        <li  <?php if ($view === 'checkout') { ?>class="active"<?php } ?>><a href="index.php?view=checkout">Checkout</a></li>
-      </ul>
       <ul class="nav navbar-nav navbar-right login">
-        <li>
-          <a href="index.php?view=checkout">
-            <!-- <span class="badge"></span> <span class="glyphicon glyphicon-shopping-cart" aria-hidden="true"></span></a> -->
-        </li>
+
         <li class="dropdown">
 		  <?php if ($user == null): ?>
             <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">

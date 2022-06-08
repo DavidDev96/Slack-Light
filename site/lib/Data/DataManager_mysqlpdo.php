@@ -3,6 +3,7 @@
 namespace Data;
 
 use Slack\User;
+use Slack\Channel;
 
 
 class DataManager implements IDataManager {
@@ -17,9 +18,9 @@ class DataManager implements IDataManager {
 
 			$type = 'mysql';
 			$host = 'db';
-			$name = 'slack';
-			$user = 'db';
-			$pass = 'db';
+			$name = 'Slack';
+			$user = 'root';
+			$pass = 'root';
 
 			self::$__connection = new \PDO($type . ':host=' . $host . ';dbname=' . $name . ';charset=utf8', $user, $pass);
 		}
@@ -72,30 +73,65 @@ class DataManager implements IDataManager {
 	}
 
 
-
 	/**
 	 * get the categories
 	 * @return array of Category-items
 	 */
-	// public static function getCategories() : array {
-	// 	$return = [];
+	public static function getConversations() : array {
+		$return = [];
 
-	// 	$con = self::getConnection();
-	// 	$res = self::query(
-	// 		$con,
-	// 		'SELECT id, name
-	// 		FROM categories;'
-	// 	);
+		$con = self::getConnection();
+		$res = self::query(
+			$con,
+			'SELECT id, name
+			FROM conversation;'
+		);
 
-	// 	while ($category = self::fetchObject($res)) {
-	// 		$return[] = new Category($category->id, $category->name);
-	// 	}
+		while ($category = self::fetchObject($res)) {
+			$return[] = new Category($category->id, $category->name);
+		}
 
-	// 	self::close($res);
-	// 	self::closeConnection();
+		self::close($res);
+		self::closeConnection();
 
-	// 	return $return;
-	// }
+		return $return;
+	}	
+
+	public static function getChannelsOfUserById(int $userId) : array {
+		$channelIds = [];
+		$return = [];
+
+		$con = self::getConnection();
+		$resChannelIds = self::query(
+			$con,
+			'SELECT channelId
+				FROM ChannelUser
+				WHERE userId = ?;',
+			[$userId]
+		);
+
+		while ($channelId = self::fetchObject($resChannelIds)) {
+			array_push($channelIds, $channelId);
+		}
+
+		$resChannels = self::query(
+			$con,
+			'SELECT id, channelName, description, createdBy, markedAsImportant, deleted
+				FROM Channel
+				WHERE id IN (1,2,3,4)'
+		);
+
+		while ($channel = self::fetchObject($resChannels)) {
+			$return[] = new Channel($channel->id, $channel->channelName, $channel->description, $channel->createdBy, $channel->markedAsImportant, $channel->deleted);
+		}
+
+		self::close($resChannels);
+		self::closeConnection();
+
+		return $return;
+	}
+
+
 
 	// public static function getBooksByCategory(int $categoryId) : array {
 	// 	$return = [];
@@ -126,7 +162,7 @@ class DataManager implements IDataManager {
 		$res = self::query(
 			$con,
 			'SELECT id, userName, passwordHash, registered, deleted
-			FROM user
+			FROM User
 			WHERE userName = ?
 			LIMIT 1;',
 			[$userName]
@@ -149,7 +185,7 @@ class DataManager implements IDataManager {
 		$res = self::query(
 			$con,
 			'SELECT id, userName, passwordHash, registered, deleted
-			FROM user
+			FROM User
 			WHERE id = ?
 			LIMIT 1;',
 			[$userId]
@@ -165,60 +201,44 @@ class DataManager implements IDataManager {
 		return $return;
 	}
 
+	public static function createChannel(string $channelName, string $description) : int {
+		$return = null;
+		$user = AuthenticationManager::getAuthenticatedUser();
+		$userId= $user !== null ? $user->getId() : 0;
 
+		$date = new DateTime();
 
+		$con = self::getConnection();
 
+		$con->beginTransaction();
 
+		try {
 
+			self::query($con,
+				'INSERT into Channel
+					(channelName, description, createdBy, createdAt, markedAsImportant, deleted)
+					VALUES (?, ?, ?, ?, ?);',
+				[
+					$channelName,
+					$description,
+					$userId,
+					$date->getTimeStamp(),
+					0,
+					0
+				]
+			);
+			$channelId = self::lastInsertId($con);
+			$con->commit();
+			$return = $channelId;
+		}
+		catch (\Exception $e) {
+			$con->rollBack();
+			$return = null;
+		}
 
+		self::closeConnection();
 
-
-
-
-
-
-	// public static function createOrder(int $userId, array $bookIds, string $nameOnCard, string $cardNumber) : int {
-	// 	$return = null;
-
-	// 	$con = self::getConnection();
-
-	// 	$con->beginTransaction();
-
-	// 	try {
-
-	// 		self::query($con,
-	// 			'INSERT into orders
-	// 				(userId, creditCardNumber, creditCardHolder)
-	// 				VALUES (?, ?, ?);',
-	// 			[
-	// 				$userId,
-	// 				$cardNumber,
-	// 				$nameOnCard
-	// 			]
-	// 		);
-
-	// 		$orderId = self::lastInsertId($con);
-
-	// 		foreach ($bookIds AS $bookId) {
-	// 			self::query($con,
-	// 				'INSERT INTO orderedbooks
-	// 				(orderId, bookId)
-	// 				VALUES (?, ?);',
-	// 				[(int)$orderId, $bookId]
-	// 			);
-	// 		}
-
-	// 		$con->commit();
-	// 		$return = $orderId + 1000000;
-	// 	}
-	// 	catch (\Exception $e) {
-	// 		$con->rollBack();
-	// 		$return = null;
-	// 	}
-
-	// 	self::closeConnection();
-
-	// 	return $return;
-	// }
+		return $return;
+	}
 
 }

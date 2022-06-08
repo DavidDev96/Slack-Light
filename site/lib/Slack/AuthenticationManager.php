@@ -14,7 +14,7 @@ class AuthenticationManager extends BaseObject {
 			$user != null
 			&& $user->getPasswordHash() === hash('sha1', $userName . '|' . $password)
 		) {
-			$_SESSION['user'] = $user->getId();
+			$_SESSION['User'] = $user->getId();
 			return true;
 		}
 		self::signOut();
@@ -22,16 +22,14 @@ class AuthenticationManager extends BaseObject {
 	}
 
 	public static function isAuthenticated() : bool {
-		return isset($_SESSION['user']);
+		return isset($_SESSION['User']);
 	}
 
 	public static function signOut() : void {
-		unset($_SESSION['user']);
+		unset($_SESSION['User']);
 	}
 
 	public static function getAuthenticatedUser() : ?User {
-		return self::isAuthenticated() ? DataManager::getUserById($_SESSION['user']) : null;
+		return self::isAuthenticated() ? DataManager::getUserById($_SESSION['User']) : null;
 	}
-
-
 }
