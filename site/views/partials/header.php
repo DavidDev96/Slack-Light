@@ -35,6 +35,9 @@ if (isset($_GET["errors"])) {
 
 
     <div class="navbar-collapse collapse" id="bs-navbar-collapse-1">
+      <ul class="nav navbar-nav">
+          <li  <?php if ($view === 'channelList') { ?>class="active"<?php } ?>><a href="index.php?view=welcome">Channels</a></li>
+      </ul>
       <ul class="nav navbar-nav navbar-right login">
 
         <li class="dropdown">

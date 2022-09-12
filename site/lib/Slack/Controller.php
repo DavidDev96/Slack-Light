@@ -3,11 +3,14 @@
 namespace Slack;
 
 use Data\DataManager;
+use Slack\Channel;
+use \Datetime;
 
 class Controller extends BaseObject {
-
 	const PAGE = 'page';
 	const ACTION = 'action';
+	const MESSAGE_CONTENT = 'messageContent';
+	const ACTION_MESSAGE_ADD = 'messageAdd';
 	const ACTION_LOGIN = 'login';
 	const ACTION_LOGOUT = 'logout';
 	const ACTION_CREATE_CHANEL = 'createChannel';
@@ -58,16 +61,61 @@ class Controller extends BaseObject {
 				Util::redirect();
 				break;
 
-			// case self::ACTION_CREATE_CHANNEL:
-			// 	Channel::add((int)$_REQUEST['bookId']);
-			// 	Util::redirect();
-			// 	break;
+			case self::ACTION_MESSAGE_ADD:
+				$user = AuthenticationManager::getAuthenticatedUser();
+
+				if ($user == null) {
+					$this->forwardRequest(['Not logged in.']);
+					break;
+				}
+
+				if (!$this->addMessage($_POST[self::MESSAGE_CONTENT])) {
+					$this->forwardRequest(['Sending failed.']);
+				} else {
+					Util::redirect();
+				}
+				break;
 
 			default:
 				throw new \Exception('Unknown controller action: ' . $action);
 				break;
 		}
 
+	}
+
+	protected function addMessage(string $messageContent = null): bool {
+		$errors = [];
+
+		// $channelId = DataManager::getCurrentChannelId();
+		$channelId = 2;
+		$user = AuthenticationManager::getAuthenticatedUser();
+		$userName = $user !== null ? $user->getUserName() : null;
+		$createdAt = date_create()->format('Y-m-d H:i:s');
+
+		if ($messageContent == null || strlen($messageContent) == 0) {
+			$errors[] = 'Message content is empty.';
+		}
+
+		if ($channelId == null || $channelId == 0) {
+			$errors[] = 'Invalid channelId.';
+		}
+
+		if ($userName == null) {
+			$errors[] = 'Invalid user name.';
+		}
+
+		if (sizeof($errors) > 0) {
+			$this->forwardRequest($errors);
+			return false;
+		}
+		//try to add a new message
+		$messageId = \Data\DataManager::createMessage($channelId, $userName, $messageContent, $createdAt, 0);
+		if (!$messageId) {
+			$this->forwardRequest(['Could not create message.']);
+			return false;
+		}
+
+		return true;
 	}
 
 	private function forwardRequest(array $errors, string $page = null) {
@@ -84,5 +132,4 @@ class Controller extends BaseObject {
 
 		header('Location:' . $page);
 	}
-
 }

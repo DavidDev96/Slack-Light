@@ -28,7 +28,7 @@ $usersChannels = $userId !== null ?
 	<?php else: ?>
 		<?php if (sizeof($usersChannels) > 0): ?>
 			<p>Your Channels:</p>
-			<?php require_once('views/partials/channelList.php'); ?>
+			<?php require_once('views/channelList.php'); ?>
 		<?php else: ?>
 			<p>You do not have any Channels</p>
 		<?php endif; ?>

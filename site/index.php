@@ -1,5 +1,11 @@
+
+<style>
+	<?php include 'site/css/main.css'; ?>
+</style>
+
 <?php
 require_once('inc' . DIRECTORY_SEPARATOR . 'bootstrap.php');
+
 
 $view = $default_view;
 

@@ -9,6 +9,7 @@ class Channel extends Entity {
     private string $createdBy;
     private bool $markedAsImportant;
     private bool $deleted;
+	private int $currentChannelId;
 
 	public static function add(int $bookId) : void {
 		$cart = self::getCart();
@@ -35,8 +36,11 @@ class Channel extends Entity {
 		return $this->channelName;
 	}
 
+	public function getChannelId(): string {
+		return $this->id;
+	}
+
 	public function getDescription() : string {
 		return $this->description;
 	}
-
 }

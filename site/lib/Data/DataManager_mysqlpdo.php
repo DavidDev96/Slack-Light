@@ -4,6 +4,7 @@ namespace Data;
 
 use Slack\User;
 use Slack\Channel;
+use Slack\Message;
 
 
 class DataManager implements IDataManager {
@@ -11,6 +12,15 @@ class DataManager implements IDataManager {
 	// ddev launch -p
 
 	private static $__connection;
+	private static $currentChannelId = 0;
+
+	public static function setCurrentChannelId($channelId) {
+		self::$currentChannelId = $channelId;
+	}
+
+	public static function getCurrentChannelId() : int {
+		return self::$currentChannelId;
+	}
 
 	private static function getConnection() {
 		if (!isset(self::$__connection)) {
@@ -73,29 +83,68 @@ class DataManager implements IDataManager {
 	}
 
 
-	/**
-	 * get the categories
-	 * @return array of Category-items
+	  /**
+	 * get the the messages of channel per channelId
+	 * 
+	 * note: see how prepared statements replace "?" with array element values
+	 *
+	 * @param integer $channelId  numeric id of the category
+	 * @return array of messages
 	 */
-	public static function getConversations() : array {
+
+	public static function getChannelMessagesByChannelId(int $channelId) : array {
 		$return = [];
+
+		$con = self::getConnection();
+		$resMessages = self::query(
+			$con,
+			'SELECT id, channelId, fromId, content, createdAt, deleted
+				FROM Message
+				WHERE channelId = ?;',
+			[$channelId]
+		);
+
+		while ($message = self::fetchObject($resMessages)) {
+			$return[] = new Message($message->id, $message->channelId, $message->fromId, $message->content, $message->createdAt, $message->deleted);
+		}
+
+		self::close($resMessages);
+		self::closeConnection();
+
+		return $return;
+	}
+
+	public static function getChannelById(string $channelId) : ?Channel {
+		$return = null;
 
 		$con = self::getConnection();
 		$res = self::query(
 			$con,
-			'SELECT id, name
-			FROM conversation;'
+			'SELECT id, channelName, description, createdBy, markedAsImportant, deleted
+			FROM Channel
+			WHERE id = ?
+			LIMIT 1;',
+			[$channelId]
 		);
 
-		while ($category = self::fetchObject($res)) {
-			$return[] = new Category($category->id, $category->name);
+		if ($channel = self::fetchObject($res)) {
+			$return = new Channel($channel->id, $channel->channelName, $channel->description, $channel->createdBy, $channel->markedAsImportant, $channel->deleted);
 		}
 
 		self::close($res);
 		self::closeConnection();
 
 		return $return;
-	}	
+	}
+
+	/**
+	 * get the the channels of of current User by userId
+	 * 
+	 * note: see how prepared statements replace "?" with array element values
+	 *
+	 * @param integer $userId  numeric id of the category
+	 * @return array of channels
+	 */
 
 	public static function getChannelsOfUserById(int $userId) : array {
 		$channelIds = [];
@@ -130,30 +179,6 @@ class DataManager implements IDataManager {
 
 		return $return;
 	}
-
-
-
-	// public static function getBooksByCategory(int $categoryId) : array {
-	// 	$return = [];
-
-	// 	$con = self::getConnection();
-	// 	$res = self::query(
-	// 		$con,
-	// 		'SELECT id, categoryId, title, author, price
-	// 		FROM books
-	// 		WHERE categoryId = ?;',
-	// 		[$categoryId]
-	// 	);
-
-	// 	while ($book = self::fetchObject($res)) {
-	// 		$return[] = new Book($book->id, $book->categoryId, $book->title, $book->author, $book->price);
-	// 	}
-
-	// 	self::close($res);
-	// 	self::closeConnection();
-
-	// 	return $return;
-	// }
 
 	public static function getUserByUserName(string $userName) : ?User {
 		$return = null;
@@ -240,5 +265,42 @@ class DataManager implements IDataManager {
 
 		return $return;
 	}
+
+	public static function createMessage(int $channelId, string $createdBy, string $content, string $createdAt, int $deleted) : int {
+		$con = self::getConnection();
+	
+		$con->beginTransaction();
+	
+		try {
+		  self::query($con, "
+		  	INSERT INTO Message (
+			  channelId,
+			  createdBy,
+			  content,
+			  createdAt,
+			  isEdited,
+			  deleted
+			) VALUES (
+			  ?,
+			  ?,
+			  ?,
+			  ?,
+			  ?,
+			  ?,
+			  ?
+			);
+			", [$channelId, $createdBy, $content, $createdAt, 0, $deleted]);
+			$messageId = self::lastInsertId($con);
+		  	$con->commit();
+		}
+		catch (\Exception $e) {
+	
+		  // one of the queries failed - complete rollback
+		  $con->rollBack();
+		  $messageId = null;
+		}
+		self::closeConnection($con);
+		return $messageId;
+	  }
 
 }
