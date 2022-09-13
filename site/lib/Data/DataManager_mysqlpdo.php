@@ -98,16 +98,57 @@ class DataManager implements IDataManager {
 		$con = self::getConnection();
 		$resMessages = self::query(
 			$con,
-			'SELECT id, channelId, fromId, content, createdAt, deleted
+			'SELECT id, channelId, createdBy, content, createdAt, isEdited, deleted
 				FROM Message
 				WHERE channelId = ?;',
 			[$channelId]
 		);
 
 		while ($message = self::fetchObject($resMessages)) {
-			$return[] = new Message($message->id, $message->channelId, $message->fromId, $message->content, $message->createdAt, $message->deleted);
+			$return[] = new Message($message->id, $message->channelId, $message->createdBy, $message->content, $message->createdAt, $message->isEdited, $message->deleted);
 		}
 
+		self::close($resMessages);
+		self::closeConnection();
+
+		return $return;
+	}
+
+	public static function getImportantMessagesByChannelId(int $userId, int $channelId): array {
+		$return = [];
+		$messageIds = [];
+
+		$con = self::getConnection();
+		$resImportantMessages = self::query(
+			$con,
+			'SELECT id, messageId, markedById, channelId
+				FROM ImportantMessage
+				WHERE markedById = ? and channelId = ?;',
+			[$userId, $channelId]
+		);
+
+		while ($impMessage = self::fetchObject($resImportantMessages)) {
+			$messageIds[] = ($impMessage->messageId);
+		}
+
+		if ($messageIds == []) {
+			self::close($resImportantMessages);
+			return $return;
+		}
+
+		$resMessages = self::query(
+			$con,
+			'SELECT id, channelId, createdBy, content, createdAt, isEdited, deleted
+				FROM Message
+				WHERE channelId = ? AND id in (?);',
+				[$channelId, $messageIds]
+		);
+
+		while ($message = self::fetchObject($resMessages)) {
+			$return[] = new Message($message->id, $message->channelId, $message->createdBy, $message->content, $message->createdAt, $message->isEdited, $message->deleted);
+		}
+
+		self::close($resImportantMessages);
 		self::close($resMessages);
 		self::closeConnection();
 
@@ -120,7 +161,7 @@ class DataManager implements IDataManager {
 		$con = self::getConnection();
 		$res = self::query(
 			$con,
-			'SELECT id, channelName, description, createdBy, markedAsImportant, deleted
+			'SELECT id, channelName, description, createdBy, deleted
 			FROM Channel
 			WHERE id = ?
 			LIMIT 1;',
@@ -128,7 +169,27 @@ class DataManager implements IDataManager {
 		);
 
 		if ($channel = self::fetchObject($res)) {
-			$return = new Channel($channel->id, $channel->channelName, $channel->description, $channel->createdBy, $channel->markedAsImportant, $channel->deleted);
+			$return = new Channel($channel->id, $channel->channelName, $channel->description, $channel->createdBy, $channel->deleted);
+		}
+
+		self::close($res);
+		self::closeConnection();
+
+		return $return;
+	}
+
+	public static function markMessageAsImportant(int $messageId, int $userId, int $channelId) {
+		$return = null;
+
+		$con = self::getConnection();
+		$res = self::query(
+			$con,
+			'INSERT INTO ImportantMessage(messageId, markedById, channelId) VALUES (?, ?, ?)',
+			[$messageId, $userId, $channelId]
+		);
+
+		if ($channel = self::fetchObject($res)) {
+			$return = new Channel($channel->id, $channel->channelName, $channel->description, $channel->createdBy, $channel->deleted);
 		}
 
 		self::close($res);
@@ -165,13 +226,13 @@ class DataManager implements IDataManager {
 
 		$resChannels = self::query(
 			$con,
-			'SELECT id, channelName, description, createdBy, markedAsImportant, deleted
+			'SELECT id, channelName, description, createdBy, deleted
 				FROM Channel
 				WHERE id IN (1,2,3,4)'
 		);
 
 		while ($channel = self::fetchObject($resChannels)) {
-			$return[] = new Channel($channel->id, $channel->channelName, $channel->description, $channel->createdBy, $channel->markedAsImportant, $channel->deleted);
+			$return[] = new Channel($channel->id, $channel->channelName, $channel->description, $channel->createdBy, $channel->deleted);
 		}
 
 		self::close($resChannels);
@@ -186,7 +247,7 @@ class DataManager implements IDataManager {
 		$con = self::getConnection();
 		$res = self::query(
 			$con,
-			'SELECT id, userName, passwordHash, registered, deleted
+			'SELECT id, userName, passwordHash, deleted
 			FROM User
 			WHERE userName = ?
 			LIMIT 1;',
@@ -209,7 +270,7 @@ class DataManager implements IDataManager {
 		$con = self::getConnection();
 		$res = self::query(
 			$con,
-			'SELECT id, userName, passwordHash, registered, deleted
+			'SELECT id, userName, passwordHash, deleted
 			FROM User
 			WHERE id = ?
 			LIMIT 1;',
@@ -241,14 +302,13 @@ class DataManager implements IDataManager {
 
 			self::query($con,
 				'INSERT into Channel
-					(channelName, description, createdBy, createdAt, markedAsImportant, deleted)
+					(channelName, description, createdBy, createdAt, deleted)
 					VALUES (?, ?, ?, ?, ?);',
 				[
 					$channelName,
 					$description,
 					$userId,
 					$date->getTimeStamp(),
-					0,
 					0
 				]
 			);
@@ -302,5 +362,35 @@ class DataManager implements IDataManager {
 		self::closeConnection($con);
 		return $messageId;
 	  }
+
+	  public static function createUser(string $userName, string $password): int {
+		$con = self::getConnection();
+	
+		$con->beginTransaction();
+	
+		try {
+		  self::query($con, "
+		  	INSERT INTO User (
+				userName,
+				passwordHash,
+				deleted
+				) VALUES (
+					?,
+					?,
+					?
+				);
+				", [$userName, $password, 0]);
+				$userId = self::lastInsertId($con);
+				$con->commit();
+	  }
+	  catch (\Exception $e) {
+	
+		// one of the queries failed - complete rollback
+		$con->rollBack();
+		$userId = null;
+	  }
+	  self::closeConnection($con);
+	  return $userId;
+	}
 
 }

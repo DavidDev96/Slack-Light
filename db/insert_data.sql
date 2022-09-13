@@ -15,9 +15,8 @@ INSERT INTO Channel VALUES (
     'Hier können sich alle registrierte Benutzer austauschen', 
     1, 
     '2019-04-01 12:00:00',
-    0,
     0
-    );
+);
 
 INSERT INTO Channel VALUES (
     2,
@@ -25,9 +24,8 @@ INSERT INTO Channel VALUES (
     'Der offizielle Channel der FH Hagenberg', 
     1, 
     '2019-04-01 12:00:00',
-    0,
     0
-    );
+);
 
 
 /* INSERTING DEFAULT CHANNEL USERS */
@@ -82,7 +80,6 @@ INSERT INTO Message VALUES (
     'Hallo!',
     '2019-04-01 12:00:00',
     1,
-    0,
     0
 );
 
@@ -94,7 +91,6 @@ INSERT INTO Message VALUES (
     'Danke',
     '2019-04-01 13:00:00',
     1,
-    0,
     0
 );
 
@@ -105,7 +101,6 @@ INSERT INTO Message VALUES (
     'Endlich Chatten <3',
     'Juhuu',
     '2019-04-01 14:00:00',
-    0,
     1,
     0
 );

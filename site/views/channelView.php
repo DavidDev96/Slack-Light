@@ -23,6 +23,7 @@ $userId= $user !== null ? $user->getId() : 0;
 
 
 $channelMessages = DataManager::getChannelMessagesByChannelId($channelId);
+$importantMessages = DataManager::getImportantMessagesByChannelId($userId, $channelId);
 require_once('views/partials/header.php');
 
 ?>
@@ -42,7 +43,7 @@ require_once('views/partials/header.php');
         <br>
         <!-- My Messages: -->
         <?php if ($message->getCreatedBy() == $userId): ?>
-            <div style="font-size: 16px; text-align: right; border: 1px solid; margin-left: 500px;">
+            <div style="background-color: azure; font-size: 16px; text-align: right; border: 1px solid; margin-left: 500px;">
                 <p style="margin: 12px;">
                     <?php print $message->getMessageContent(); ?>
                 </p>
@@ -52,25 +53,60 @@ require_once('views/partials/header.php');
             </div>
         <!-- Other Messages -->
         <?php else: ?>
-            <div style="font-size: 16px; text-align: left; border: 1px solid; margin-right: 500px;">
+            <div style="background-color: antiquewhite; font-size: 16px; text-align: left; border: 1px solid; margin-right: 500px;">
+                <div style="display: flex;">
+                    <p style="margin: 12px;">
+                        <?php print $message->getMessageContent(); ?>
+                    </p>
+                    <!-- Mark as edited -->
+                    <?php if ($message->isEdited()): ?>
+                        <p>[EDITED]</p>
+                    <?php endif; ?>
+                    <button (click)="markAsImportant($message->getId())">!</button>
+                </div>
                 <p style="margin: 12px;">
-                    <?php print $message->getMessageContent(); ?>
-                </p>
-                <!-- Mark as edited -->
-                <?php if ($message->isEdited()): ?>
-                    <span>[EDITED]</span>
-                <?php endif; ?>
-                <p style="margin: 12px;">
-                <?php print $user->getNameById($message->getCreatedBy); print ' - '; print $message->getCreatedAt();?>
+                <?php print $message->getCreatedBy(); print ' - '; print $message->getCreatedAt();?>
                 </p>
             </div>
         <?php endif; ?>
     <?php endforeach; ?>
-<?php else: ?>
+    <?php else: ?>
     <p>
         You are not part of this channel.
     </p>
 <?php endif; ?>
+
+<?php 
+    function markAsImportant(int $messageId) {
+        if ($messageId == null) {
+            return;
+        }
+        if ($userId == null) {
+            return;
+        }
+        if ($channelId == null) {
+            return;
+        }
+        DataManager::markMessageAsImportant($messageId, $userId, $channelId);
+    }
+?>
+
+<!-- Important messages -->
+<?php if (count($importantMessages) == 0) : ?>
+
+    <?php foreach ($importantMessages as $message) : ?>
+        <br>
+        <div style="background-color: chocolate; font-size: 16px; text-align: right; border: 1px solid; margin-left: 500px;">
+            <p style="margin: 12px;">
+                <?php print $message->getMessageContent(); ?>
+            </p>
+            <p style="margin: 12px;">
+                <?php $user->getNameById($message->getCreatedBy); print ' - '; print $message->getCreatedAt();?>
+            </p>
+        </div>
+    <?php endforeach; ?>
+<?php endif; ?>
+
 
 <?php if (AuthenticationManager::isAuthenticated()): ?>
     <div style="margin-top: 40px;">

@@ -12,11 +12,14 @@ class Controller extends BaseObject {
 	const MESSAGE_CONTENT = 'messageContent';
 	const ACTION_MESSAGE_ADD = 'messageAdd';
 	const ACTION_LOGIN = 'login';
+	const ACTION_REGISTER = 'register';
 	const ACTION_LOGOUT = 'logout';
 	const ACTION_CREATE_CHANEL = 'createChannel';
 	const USER_NAME = 'userName';
 	const USER_ID = 'userId';
 	const USER_PASSWORD = 'password';
+	const USER_NAME_NEW ='userNameNew';
+	const USER_PASSWORD_NEW = 'passwordNew';
 
 	private static $instance = false;
 	public static function getInstance() : Controller {
@@ -54,6 +57,18 @@ class Controller extends BaseObject {
 					Util::redirect("login");
 				}
 				Util::redirect();
+				break;
+
+			case self::ACTION_REGISTER:
+				if (!AuthenticationManager::register($_REQUEST[self::USER_NAME_NEW], $_REQUEST[self::USER_PASSWORD_NEW])) {
+					$this->forwardRequest(['Wrong input']);
+					Util::redirect("register");
+				}
+				if (!AuthenticationManager::authenticate($_REQUEST[self::USER_NAME_NEW], $_REQUEST[self::USER_PASSWORD_NEW])) {
+					$this->forwardRequest(['Invalid user name or password']);
+					Util::redirect("login");
+				}
+				Util::redirect("welcome");
 				break;
 
 			case self::ACTION_LOGOUT:

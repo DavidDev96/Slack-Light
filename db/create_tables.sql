@@ -28,8 +28,7 @@ CREATE TABLE Message (
     createdAt DATETIME,
     isEdited BOOL,
     deleted BOOL,
-    FOREIGN KEY (channelId) REFERENCES Channel(id),
-    FOREIGN KEY (fromId) REFERENCES User(id)
+    FOREIGN KEY (channelId) REFERENCES Channel(id)
 );
 
 CREATE TABLE ImportantMessage (
@@ -39,11 +38,11 @@ CREATE TABLE ImportantMessage (
     FOREIGN KEY (messageId) REFERENCES Message(id)
 );
 
-CREATE TABEL ReadMessage (
+CREATE TABLE ReadMessage (
     id INT auto_increment PRIMARY KEY,
     messageId INT,
     readById INT,
-    FOREIGN KEY (messageId) REFERENCES Message(id)
+    FOREIGN KEY (messageId) REFERENCES Message(id),
     FOREIGN KEY (readById) REFERENCES User(id)
 );
 

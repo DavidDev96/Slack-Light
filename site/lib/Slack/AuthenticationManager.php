@@ -32,4 +32,18 @@ class AuthenticationManager extends BaseObject {
 	public static function getAuthenticatedUser() : ?User {
 		return self::isAuthenticated() ? DataManager::getUserById($_SESSION['User']) : null;
 	}
+
+	public static function register(string $userName, string $password) : bool {
+		if ($userName == null) {
+			return false;
+		}
+		if ($password == null) {
+			return false;
+		}
+		$password = hash('sha1', $userName . '|' . $password);
+		if (DataManager::createUser($userName, $password) == null) {
+			return false;
+		}
+		return true;
+	}
 }

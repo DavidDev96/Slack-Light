@@ -7,7 +7,6 @@ class Channel extends Entity {
 	private string $channelName;
 	private string $description;
     private string $createdBy;
-    private bool $markedAsImportant;
     private bool $deleted;
 	private int $currentChannelId;
 
@@ -17,12 +16,11 @@ class Channel extends Entity {
 		self::storeCart($cart);
 	}
 
-	public function __construct(int $id, string $channelName, string $description, int $createdBy, bool $markedAsImportant, bool $deleted) {
+	public function __construct(int $id, string $channelName, string $description, int $createdBy, bool $deleted) {
 		parent::__construct($id);
 		$this->channelName = $channelName;
 		$this->description = $description;
         $this->createdBy = $createdBy;
-        $this->markedAsImportant = $markedAsImportant;
         $this->deleted = $deleted;
 	}
 
